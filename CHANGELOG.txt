@@ -5,6 +5,10 @@ master:
  - obspy.io.shapefile:
    * Add possibility to add custom database columns when writing catalog
      objects to shapefile (see #2012)
+ - obspy.signal:
+   * PPSD: for safety reasons, raise an ObsPyException if trying to read a PPSD
+     npz file that was written with a newer version of the npz representation
+     than is used by current ObsPy version (see #2045)
 
 1.1.x:
  - obspy.core:
