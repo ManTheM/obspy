@@ -696,6 +696,41 @@ class PsdTestCase(unittest.TestCase):
                              reltol=1.5) as ic:
             ppsd.plot_spectrogram(filename=ic.name, show=False)
 
+    def test_exception_reading_newer_npz(self):
+        """
+        Checks that an exception is properly raised when trying to read a npz
+        that was written on a more recent ObsPy version (specifically that has
+        a higher 'ppsd_version' number which is used to keep track of changes
+        in PPSD and the npz file used for serialization).
+        """
+        data = np.load(self.example_ppsd_npz)
+        # we have to load, modify 'ppsd_version' and save the npz file for the
+        # test..
+        items = {key: data[key] for key in data.files}
+        # deliberately set a higher ppsd_version number
+        items['ppsd_version'] = items['ppsd_version'].copy()
+        items['ppsd_version'].fill(100)
+        with NamedTemporaryFile() as tf:
+            filename = tf.name
+            with open(filename, 'wb') as fh:
+                np.savez(fh, **items)
+            with warnings.catch_warnings(record=True) as w:
+                PPSD.load_npz(filename)
+        self.assertTrue(len(w))
+        for w_ in w:
+            try:
+                self.assertEqual(
+                    w_.message.args[0],
+                    "Trying to read a PPSD npz with 'ppsd_version=100'. This "
+                    "file was written on a more recent ObsPy version and can "
+                    "not safely be read with this ObsPy version (current "
+                    "'ppsd_version' is 1).")
+            except AssertionError:
+                continue
+            break
+        else:
+            raise
+
 
 def suite():
     return unittest.makeSuite(PsdTestCase, 'test')

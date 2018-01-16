@@ -1231,6 +1231,16 @@ class PPSD(object):
         data = np.load(filename)
         # the information regarding stats is set from the npz
         ppsd = PPSD(Stats(), metadata=metadata)
+        # add some future-proofing and show a warning if older obspy
+        # versions should read a more recent ppsd npz file, since this is very
+        # like problematic
+        if data['ppsd_version'].item() > ppsd.ppsd_version:
+            msg = ("Trying to read a PPSD npz with 'ppsd_version={}'. This "
+                   "file was written on a more recent ObsPy version and can "
+                   "not safely be read with this ObsPy version (current "
+                   "'ppsd_version' is {}).").format(
+                        data['ppsd_version'].item(), ppsd.ppsd_version)
+            warnings.warn(msg)
         for key in ppsd.NPZ_STORE_KEYS:
             # data is stored as arrays in the npz.
             # we have to convert those back to lists (or simple types), so that
